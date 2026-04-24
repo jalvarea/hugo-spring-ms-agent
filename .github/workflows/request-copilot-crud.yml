@@ -1,0 +1,62 @@
+name: Request Copilot CRUD Implementation
+
+on:
+  workflow_dispatch:
+    inputs:
+      resource_hint:
+        description: 'Nombre opcional del recurso, ejemplo Customer'
+        required: false
+        type: string
+
+jobs:
+  create-and-assign:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Create issue and assign to Copilot Agent
+        env:
+          GH_TOKEN: ${{ secrets.COPILOT_AGENT_TOKEN }}
+          OWNER: ${{ github.repository_owner }}
+          REPO: ${{ github.event.repository.name }}
+          RESOURCE_HINT: ${{ inputs.resource_hint }}
+        run: |
+          BODY=$(cat <<EOF
+          Implementar el CRUD completo del recurso principal definido en \`src/main/resources/openapi.json\`.
+
+          Usar estrictamente:
+          - \`.github/copilot-instructions.md\`
+          - \`.github/instructions/*.instructions.md\`
+          - \`.github/prompts/implement-crud.prompt.md\`
+
+          Paquetes OpenAPI:
+          - Interfaces API: \`com.test.services.server\`
+          - Modelos request/response: \`com.test.services.server.models\`
+
+          Reglas obligatorias:
+          - No crear DTOs propios como \`CustomerRequestDto\` o \`CustomerResponseDto\`.
+          - Usar modelos generados por OpenAPI.
+          - El controller debe implementar la interfaz generada.
+          - No duplicar endpoints con anotaciones manuales.
+          - El mapper debe convertir OpenAPI DTO ↔ dominio ↔ entidad.
+          - Manejar enums OpenAPI con \`getValue()\` y \`fromValue(...)\`.
+          - Ejecutar \`mvn clean install\`.
+
+          Resource hint: ${RESOURCE_HINT:-derivar desde OpenAPI}
+          EOF
+          )
+
+          gh api repos/$OWNER/$REPO/issues \
+            --method POST \
+            --field title="Implementar CRUD desde OpenAPI - ${RESOURCE_HINT:-auto}" \
+            --field body="$BODY" \
+            --field labels[]="copilot" \
+            --field labels[]="crud" \
+            --field labels[]="openapi" \
+            --input - <<EOF
+          {
+            "agent_assignment": {
+              "target_repo": "$OWNER/$REPO",
+              "base_branch": "main"
+            }
+          }
+          EOF
