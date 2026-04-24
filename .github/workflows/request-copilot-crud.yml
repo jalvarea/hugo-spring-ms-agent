@@ -23,6 +23,16 @@ jobs:
       RESOURCE_HINT: ${{ inputs.resource_hint }}
 
     steps:
+      - name: Validate token
+        env:
+          GH_TOKEN: ${{ secrets.COPILOT_AGENT_TOKEN }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "ERROR: GH_TOKEN está vacío. Revisa el secret COPILOT_AGENT_TOKEN."
+            exit 1
+          fi
+          gh auth status  
+
       - name: Create issue and assign to Copilot Agent
         run: |
           BODY=$(cat <<'EOF'
