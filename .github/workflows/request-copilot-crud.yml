@@ -24,16 +24,15 @@ jobs:
 
     steps:
       - name: Validate token
-        env:
-          GH_TOKEN: ${{ secrets.COPILOT_AGENT_TOKEN }}
         run: |
           if [ -z "$GH_TOKEN" ]; then
             echo "ERROR: GH_TOKEN está vacío. Revisa el secret COPILOT_AGENT_TOKEN."
             exit 1
           fi
-          gh auth status  
+          gh auth status
 
-      - name: Create issue and assign to Copilot Agent
+      - name: Create issue
+        id: create_issue
         run: |
           BODY=$(cat <<'EOF'
           Implementar el CRUD completo del recurso principal definido en `src/main/resources/openapi.json`.
@@ -55,28 +54,39 @@ jobs:
           - El mapper debe convertir OpenAPI DTO ↔ dominio ↔ entidad.
           - Manejar enums OpenAPI con `getValue()` y `fromValue(...)`.
           - Ejecutar `mvn clean install`.
-
           EOF
           )
 
           RESOURCE="${RESOURCE_HINT:-auto}"
 
-          jq -n \
-            --arg title "Implementar CRUD desde OpenAPI - $RESOURCE" \
-            --arg body "$BODY
+          ISSUE_NUMBER=$(gh api "repos/$OWNER/$REPO/issues" \
+            --method POST \
+            --field title="Implementar CRUD desde OpenAPI - $RESOURCE" \
+            --field body="$BODY
 
           Resource hint: ${RESOURCE_HINT:-derivar desde OpenAPI}" \
-            --arg target_repo "$OWNER/$REPO" \
-            '{
-              title: $title,
-              body: $body,
-              labels: ["copilot", "crud", "openapi"],
-              agent_assignment: {
-                target_repo: $target_repo,
-                base_branch: "main"
-              }
-            }' > payload.json
+            --field labels[]="copilot" \
+            --field labels[]="crud" \
+            --field labels[]="openapi" \
+            --jq '.number')
 
-          gh api "repos/$OWNER/$REPO/issues" \
+          echo "issue_number=$ISSUE_NUMBER" >> "$GITHUB_OUTPUT"
+          echo "Issue creado: #$ISSUE_NUMBER"
+
+      - name: Assign issue to Copilot Agent
+        run: |
+          ISSUE_NUMBER="${{ steps.create_issue.outputs.issue_number }}"
+
+          gh api "repos/$OWNER/$REPO/issues/$ISSUE_NUMBER/assignees" \
             --method POST \
-            --input payload.json
+            --input - <<EOF
+          {
+            "assignees": ["copilot"],
+            "agent_assignment": {
+              "target_repo": "$OWNER/$REPO",
+              "base_branch": "main"
+            }
+          }
+          EOF
+
+          echo "Issue #$ISSUE_NUMBER asignado a Copilot Agent"
