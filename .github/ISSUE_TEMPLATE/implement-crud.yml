@@ -1,0 +1,41 @@
+name: Implement CRUD from OpenAPI
+description: Solicita a Copilot implementar un CRUD completo desde el contrato OpenAPI
+title: "Implementar CRUD desde contrato OpenAPI"
+labels:
+  - copilot
+  - crud
+  - openapi
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Esta tarea debe ser asignada a GitHub Copilot cloud agent.
+
+  - type: textarea
+    id: task
+    attributes:
+      label: Tarea
+      description: Describe la implementación requerida.
+      value: |
+        Implementar el CRUD completo del recurso principal definido en `src/main/resources/openapi.json`.
+
+        Usar estrictamente:
+        - `.github/copilot-instructions.md`
+        - `.github/instructions/*.instructions.md`
+        - `.github/prompts/implement-crud.prompt.md`
+
+        Paquetes OpenAPI:
+        - Interfaces API: `com.test.services.server`
+        - Modelos request/response: `com.test.services.server.models`
+
+        Reglas obligatorias:
+        - No crear DTOs propios como `CustomerRequestDto` o `CustomerResponseDto`.
+        - Usar los modelos generados por OpenAPI.
+        - El controller debe implementar la interfaz generada por OpenAPI.
+        - No duplicar endpoints con `@GetMapping`, `@PostMapping`, `@PutMapping` o `@DeleteMapping` si existe interfaz generada.
+        - El dominio no debe depender de OpenAPI.
+        - El mapper debe convertir OpenAPI DTO ↔ dominio ↔ entidad.
+        - Si hay enums OpenAPI, convertir con `getValue()` y `EnumType.fromValue(...)`.
+        - Ejecutar `mvn clean install` antes de finalizar.
+    validations:
+      required: true

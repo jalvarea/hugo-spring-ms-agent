@@ -1,0 +1,54 @@
+methodArgumentNotValidException:
+  statusCode: '400'
+  title: Your request parameters didn't validate123.
+  detail: Invalid request content.
+
+missingRequestHeaderException:
+  statusCode: '400'
+  title: Your request parameters didn't validate.
+  detail: Missing required headers.
+
+httpMessageNotReadableException:
+  statusCode: '400'
+  title: Your request parameters didn't validate.
+  detail: Invalid request content.
+
+notParameterizedException:
+  statusCode: '500'
+  title: Internal error.
+  detail: Internal error in service.
+
+connectExceptionClient:
+  statusCode: '500'
+  title: Connection refused.
+  detail: The server is not ready to handle the request.
+
+notFoundException:
+  statusCode: '404'
+  title: Resource not found.
+  detail: Resource not found in the service.
+
+unauthorizedException:
+  statusCode: '401'
+  title: Unauthorized.
+  detail: Unauthorized to this service.
+
+forbiddenException:
+  statusCode: '403'
+  title: Forbidden.
+  detail: Access is permanently prohibited.
+
+badRequestException:
+  statusCode: '400'
+  title: Your request parameters didn't validate.
+  detail: Invalid request content.
+
+internalServerException:
+  statusCode: '500'
+  title: Internal error.
+  detail: Internal server error in service.
+
+methodNotAllowedException:
+  statusCode: '405'
+  title: Internal error.
+  detail: Internal server error in service.
