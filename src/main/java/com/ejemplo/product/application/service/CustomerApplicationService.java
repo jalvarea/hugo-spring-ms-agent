@@ -5,6 +5,7 @@ import com.ejemplo.product.domain.exception.DuplicateIdentificationException;
 import com.ejemplo.product.domain.model.Customer;
 import com.ejemplo.product.domain.port.in.CustomerUseCase;
 import com.ejemplo.product.domain.port.out.CustomerRepository;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -13,9 +14,11 @@ import java.util.List;
 public class CustomerApplicationService implements CustomerUseCase {
 
     private final CustomerRepository customerRepository;
+    private final BCryptPasswordEncoder passwordEncoder;
 
     public CustomerApplicationService(CustomerRepository customerRepository) {
         this.customerRepository = customerRepository;
+        this.passwordEncoder = new BCryptPasswordEncoder();
     }
 
     @Override
@@ -34,6 +37,7 @@ public class CustomerApplicationService implements CustomerUseCase {
         if (customerRepository.existsByIdentification(customer.getIdentification())) {
             throw new DuplicateIdentificationException(customer.getIdentification());
         }
+        customer.setPassword(passwordEncoder.encode(customer.getPassword()));
         return customerRepository.save(customer);
     }
 
@@ -45,6 +49,7 @@ public class CustomerApplicationService implements CustomerUseCase {
             throw new DuplicateIdentificationException(customer.getIdentification());
         }
         customer.setId(customerId);
+        customer.setPassword(passwordEncoder.encode(customer.getPassword()));
         return customerRepository.save(customer);
     }
 
