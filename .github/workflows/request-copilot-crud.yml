@@ -73,88 +73,20 @@ jobs:
           echo "issue_number=$ISSUE_NUMBER" >> "$GITHUB_OUTPUT"
           echo "Issue creado: #$ISSUE_NUMBER"
 
-      - name: Get issue node id
-        id: issue_node
+      - name: Assign issue to Copilot Agent
         run: |
           ISSUE_NUMBER="${{ steps.create_issue.outputs.issue_number }}"
 
-          ISSUE_NODE_ID=$(gh api graphql \
-            -f query='
-              query($owner: String!, $repo: String!, $number: Int!) {
-                repository(owner: $owner, name: $repo) {
-                  issue(number: $number) {
-                    id
-                  }
-                }
-              }
-            ' \
-            -f owner="$OWNER" \
-            -f repo="$REPO" \
-            -F number="$ISSUE_NUMBER" \
-            --jq '.data.repository.issue.id')
+          gh api "repos/$OWNER/$REPO/issues/$ISSUE_NUMBER/assignees" \
+            --method POST \
+            --input - <<EOF
+          {
+            "assignees": ["copilot-swe-agent[bot]"],
+            "agent_assignment": {
+              "target_repo": "$OWNER/$REPO",
+              "base_branch": "main"
+            }
+          }
+          EOF
 
-          if [ -z "$ISSUE_NODE_ID" ] || [ "$ISSUE_NODE_ID" = "null" ]; then
-            echo "ERROR: No se pudo obtener el node id del issue."
-            exit 1
-          fi
-
-          echo "issue_node_id=$ISSUE_NODE_ID" >> "$GITHUB_OUTPUT"
-          echo "Issue node id: $ISSUE_NODE_ID"
-
-      - name: Get repository node id
-        id: repo_node
-        run: |
-          REPO_NODE_ID=$(gh api graphql \
-            -f query='
-              query($owner: String!, $repo: String!) {
-                repository(owner: $owner, name: $repo) {
-                  id
-                }
-              }
-            ' \
-            -f owner="$OWNER" \
-            -f repo="$REPO" \
-            --jq '.data.repository.id')
-
-          if [ -z "$REPO_NODE_ID" ] || [ "$REPO_NODE_ID" = "null" ]; then
-            echo "ERROR: No se pudo obtener el node id del repositorio."
-            exit 1
-          fi
-
-          echo "repo_node_id=$REPO_NODE_ID" >> "$GITHUB_OUTPUT"
-          echo "Repository node id: $REPO_NODE_ID"
-
-      - name: Assign issue to Copilot Agent with GraphQL
-        run: |
-          ISSUE_NODE_ID="${{ steps.issue_node.outputs.issue_node_id }}"
-          REPO_NODE_ID="${{ steps.repo_node.outputs.repo_node_id }}"
-
-          gh api graphql \
-            -H "GraphQL-Features: issues_copilot_assignment_api_support,coding_agent_model_selection" \
-            -f query='
-              mutation($issueId: ID!, $targetRepositoryId: ID!, $baseRef: String!) {
-                updateIssue(input: {
-                  id: $issueId,
-                  assigneeIds: ["copilot"],
-                  agentAssignment: {
-                    targetRepositoryId: $targetRepositoryId,
-                    baseRef: $baseRef
-                  }
-                }) {
-                  issue {
-                    number
-                    title
-                    assignees(first: 10) {
-                      nodes {
-                        login
-                      }
-                    }
-                  }
-                }
-              }
-            ' \
-            -f issueId="$ISSUE_NODE_ID" \
-            -f targetRepositoryId="$REPO_NODE_ID" \
-            -f baseRef="main"
-
-          echo "Issue #${{ steps.create_issue.outputs.issue_number }} asignado a Copilot Agent vía GraphQL"
+          echo "Issue #$ISSUE_NUMBER asignado a Copilot Agent"
